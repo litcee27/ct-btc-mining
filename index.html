@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CT_BTC Miner</title>
+<script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:radial-gradient(ellipse at top,#0a1a4a 0%,#070f2b 45%,#030815 100%);color:#fff;font-family:Arial;text-align:center;padding-bottom:90px;min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;bottom:0;background:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(1px 1px at 80% 20%,#fff,transparent);opacity:.25;z-index:-1}
+.top{padding:12px;display:flex;justify-content:space-between;align-items:center;background:rgba(10,20,48,.9)}
+.halv{background:linear-gradient(90deg,#ff8c00,#ffcc00);color:#000;padding:7px;border-radius:20px;font-size:12px;font-weight:bold;margin:8px 12px}
+.logo-wrap{position:relative;width:150px;height:150px;margin:20px auto}
+.ring{position:absolute;border-radius:50%;width:100%;height:100%;border:2px solid #00d4ff}
+.r1{box-shadow:0 0 25px #00d4ff;animation:spin 3s linear infinite,blink 1.5s ease-in-out infinite}
+.r2{width:120%;height:120%;top:-10%;left:-10%;border-color:#0066ff;opacity:.4;animation:spin 4s linear infinite reverse}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.6;box-shadow:0 0 50px #00d4ff}}
+.center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:95px;height:95px;background:radial-gradient(circle at 30% 30%,#00e5ff,#0066ff);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:50px;font-weight:900;box-shadow:0 0 35px #00aaff;z-index:5;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.08)}}
+.bal{font-size:44px;font-weight:900;text-shadow:0 0 20px #00aaff}
+.dots{font-size:22px;cursor:pointer;padding:5px 10px;position:relative}
+.dropdown{display:none;position:absolute;top:35px;right:0;background:#0f1a3d;border:1px solid #1a2a5a;border-radius:12px;padding:10px;width:210px;text-align:left;z-index:100;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.dropdown.show{display:block}
+.dropdown div{padding:7px;font-size:12px;border-bottom:1px solid #1a2a5a}
+.shop{background:rgba(15,26,61,.85);margin:10px;border-radius:14px;padding:12px;text-align:left;border:1px solid #1a2a5a}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #1a2a5a}
+.btn{background:linear-gradient(90deg,#00aaff,#0066ff);color:#fff;border:0;padding:9px 15px;border-radius:10px;font-weight:bold;cursor:pointer}
+.tab{display:none;padding:10px}
+.tab.active{display:block}
+.task{background:rgba(15,26,61,.85);margin:8px;border-radius:10px;padding:12px;text-align:left;display:flex;justify-content:space-between;align-items:center}
+.nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,20,48,.95);display:flex;justify-content:space-around;padding:8px 0 12px;border-top:1px solid #1a2a5a;z-index:100}
+.nav button{background:0;border:0;color:#8aa0c8;font-size:11px}
+.nav button.active{color:#00d4ff}
+</style>
+</head>
+<body>
+
+<div class="top">
+<b>CT_BTC Miner</b>
+<div style="display:flex;align-items:center;gap:8px">
+<div id="ton-connect"></div>
+<div class="dots" onclick="toggleMenu()">⋮
+<div id="menu" class="dropdown">
+<div><b>📊 Level Status</b></div>
+<div>Current LV: <b id="mLv">1</b> / 50</div>
+<div>Rate: <b id="mRate">12.0</b> / hour</div>
+<div>Next: LV <span id="mNext">2</span> - Cost 7 CT_BTC</div>
+<div style="font-size:10px;color:#8aa0c8;border:0">LV1-10 Basic<br>LV11-20 Advanced<br>LV21-30 Pro<br>LV31-40 Ultra<br>LV41-50 MAX<br><br>Halving 1/6<br>Max 600M</div>
+<div style="border:0;text-align:center"><button class="btn" style="width:100%" onclick="buyToken()">💎 Buy CT_BTC Token</button></div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="halv">HALVING 1/6 • <span id="hRate">12.0</span> / hour • Next halving at 100M</div>
+
+<div id="mine" class="tab active">
+<div class="logo-wrap"><div class="ring r1"></div><div class="ring r2"></div><div class="center">₿</div></div>
+<div class="bal" id="bal">0.00</div>
+<div><b>CT_BTC</b></div>
+<div style="font-size:11px;color:#8aa0c8" id="info">12.0 / hour • Miners 1 / 6666</div>
+<div style="color:#ffcc00;font-size:12px;margin:6px" id="need">Need 100 CT_BTC (0/100)</div>
+<div class="shop">
+<b>Quick Upgrade</b> <span style="float:right;font-size:10px;color:#00ff88">→ Tonkeeper</span>
+<div class="item"><span>Basic Miner LV<span id="lv">1</span>/50<br><small>10/s • Cost 7</small></span><button class="btn" onclick="upgradeWithBuy()">Upgrade 7.0</button></div>
+</div>
+</div>
+
+<div id="shop" class="tab">
+<h3>🛒 Shop LV1-LV50 MAX</h3>
+<div class="shop">
+<div class="item"><span>Basic Miner<br><small>10/s per LV</small> LV <span class="lv2">1</span>/50</span><button class="btn" onclick="upgradeWithBuy()">Upgrade 7</button></div>
+<div class="item"><span>Advanced Miner<br><small>+15/s</small> LV 0/50</span><button class="btn" onclick="upgradeWithBuyAdv()">Upgrade 15</button></div>
+<div class="item"><span>Pro Miner<br><small>+50/s</small> LV 0/50</span><button class="btn" onclick="upgradeWithBuyPro()">Upgrade 100</button></div>
+<div class="item"><span>Ultra Miner<br><small>+200/s</small> LV 0/50</span><button class="btn" onclick="upgradeWithBuyUltra()">Upgrade 500</button></div>
+</div>
+</div>
+
+<div id="tasks" class="tab">
+<h3>📋 Tasks • Earn CT_BTC</h3>
+<div class="task"><span>📢 Follow TG Account<br><small>+100 CT_BTC • @Ct_BTC_mining_bot</small></span><button class="btn" onclick="followTask('https://t.me/Ct_BTC_mining_bot',100,this,'tg1')">Follow</button></div>
+<div class="task"><span>🐦 Follow X Account<br><small>+100 CT_BTC • Follow me on X</small></span><button class="btn" onclick="followTask('https://x.com/',100,this,'x1')">Follow</button></div>
+<div class="task"><span>👍 Follow FB Page<br><small>+100 CT_BTC • Like page</small></span><button class="btn" onclick="followTask('https://facebook.com/',100,this,'fb1')">Follow</button></div>
+<div class="task"><span>👥 Invite 3 Friends<br><small>+500 CT_BTC</small></span><button class="btn" onclick="taskInvite(this)">Invite</button></div>
+<div class="task"><span>☀️ Daily Check-in<br><small>+50 CT_BTC</small></span><button class="btn" onclick="dailyTask(this)">Claim</button></div>
+<div style="font-size:11px;color:#8aa0c8;margin:15px">Invite Link:<br><b id="invLink" style="color:#00d4ff;word-break:break-all">https://t.me/Ct_BTC_mining_bot?start=ref_12345</b><br><button class="btn" style="margin-top:6px" onclick="copyInv()">Copy Link</button></div>
+</div>
+
+<div id="wallet" class="tab">
+<h3>👛 Wallet</h3>
+<div class="shop">
+Balance: <b id="bal2">0.00</b> CT_BTC<br>
+<div style="font-size:11px;color:#8aa0c8;margin:8px 0">Connected Wallet: <span id="wAddr">Not connected - Connect on top</span></div>
+<button class="btn" style="width:100%;padding:12px;margin-top:8px" onclick="buyToken()">💎 BUY CT_BTC via TONKEEPER</button>
+<div style="font-size:10px;color:#8aa0c8;margin-top:10px">Upgrade auto opens Tonkeeper app with your wallet:<br><b style="color:#00d4ff;word-break:break-all">UQBLux95QUuUp2TSKKv6PHuOf6_BI6EYr5490JTEW9zmYVpQ</b></div>
+</div>
+</div>
+
+<div id="boost" class="tab">
+<h3>🚀 Boost</h3>
+<div class="task"><span>⚡ Energy Boost</span><button class="btn" onclick="alert('Energy refilled!')">Boost</button></div>
+<div class="task"><span>⛏️ Mining x2 (1h)</span><button class="btn" onclick="boostX2()">Boost</button></div>
+</div>
+
+<div class="nav">
+<button class="active" onclick="openTab('mine',this)">⛏️<br>Mine</button>
+<button onclick="openTab('shop',this)">🛒<br>Shop</button>
+<button onclick="openTab('tasks',this)">📋<br>Tasks</button>
+<button onclick="openTab('wallet',this)">👛<br>Wallet</button>
+<button onclick="openTab('boost',this)">🚀<br>Boost</button>
+</div>
+
+<script>
+let bal=parseFloat(localStorage.getItem('ctbtc_bal')||'0');
+let lv=parseInt(localStorage.getItem('ctbtc_lv')||'1');
+let rate=12.06+(lv*2);
+const TON_WALLET="UQBLux95QUuUp2TSKKv6PHuOf6_BI6EYr5490JTEW9zmYVpQ";
+
+function updateUI(){
+document.getElementById('bal').innerText=bal.toFixed(2);
+document.getElementById('bal2').innerText=bal.toFixed(2);
+document.getElementById('lv').innerText=lv;
+document.querySelectorAll('.lv2').forEach(e=>e.innerText=lv);
+document.getElementById('mLv').innerText=lv;
+document.getElementById('mNext').innerText=lv+1;
+document.getElementById('mRate').innerText=rate.toFixed(1);
+document.getElementById('hRate').innerText=rate.toFixed(1);
+document.getElementById('need').innerText=`Need 100 CT_BTC (${bal.toFixed(0)}/100)`;
+document.getElementById('info').innerText=`${rate.toFixed(2)} / hour • Miners ${lv} / 6666 • LV${lv}/50`;
+localStorage.setItem('ctbtc_bal',bal);
+localStorage.setItem('ctbtc_lv',lv);
+}
+setInterval(()=>{bal+=rate/3600;updateUI()},1000);
+updateUI();
+
+const tonConnectUI=new TON_CONNECT_UI.TonConnectUI({manifestUrl:'https://litcee27.github.io/ct-btc-mining/tonconnect-manifest.json',buttonRootId:'ton-connect'});
+tonConnectUI.onStatusChange(w=>{if(w&&w.account){document.getElementById('wAddr').innerText=w.account.address.slice(0,6)+'...'+w.account.address.slice(-4)}});
+
+function toggleMenu(){document.getElementById('menu').classList.toggle('show')}
+window.onclick=function(e){if(!e.target.closest('.dots')){document.getElementById('menu').classList.remove('show')}}
+function openTab(id,el){
+document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+el.classList.add('active');
+}
+function buyToken(){
+let amount="0.1";
+let url=`https://app.tonkeeper.com/transfer/${TON_WALLET}?amount=${(parseFloat(amount)*1000000000).toFixed(0)}&text=Buy CT_BTC LV${lv}`;
+window.open(url,'_blank');
+alert('💎 Opening Tonkeeper...\n\nPay to: UQBLux...YVpQ\n\nAmount: 0.1 TON for CT_BTC Token\n\nAfter payment, you get +7 CT_BTC to upgrade!');
+setTimeout(()=>{bal+=7;updateUI();alert('✅ Payment received! +7 CT_BTC! Now upgrade!')},4000);
+}
+function upgradeWithBuy(){if(bal>=7){bal-=7;lv++;rate+=2;updateUI();alert('✅ Upgraded to LV'+lv)}else{if(confirm('Not enough! Need 7 CT_BTC.\n\nBuy via Tonkeeper to '+TON_WALLET.slice(0,6)+'...?')) buyToken();}}
+function upgradeWithBuyAdv(){if(bal>=15){bal-=15;rate+=15;updateUI();alert('✅ Advanced +15/h')}else{if(confirm('Need 15 CT_BTC! Buy via Tonkeeper?')) buyToken();}}
+function upgradeWithBuyPro(){if(bal>=100){bal-=100;rate+=50;updateUI();alert('✅ Pro +50/h')}else{if(confirm('Need 100 CT_BTC! Buy via Tonkeeper?')) buyToken();}}
+function upgradeWithBuyUltra(){if(bal>=500){bal-=500;rate+=200;updateUI();alert('✅ Ultra +200/h')}else{if(confirm('Need 500 CT_BTC! Buy via Tonkeeper?')) buyToken();}}
+function followTask(link,reward,btn,id){
+window.open(link,'_blank');
+let tasks=JSON.parse(localStorage.getItem('ct_tasks')||'{}');
+if(tasks[id]) return;
+setTimeout(()=>{
+tasks[id]=true;bal+=reward;localStorage.setItem('ct_tasks',JSON.stringify(tasks));updateUI();
+btn.innerText='Done ✓';btn.disabled=true;
+alert('✅ +'+reward+' CT_BTC! Thanks for following!');
+},2000);
+}
+function taskInvite(btn){
+let link=document.getElementById('invLink').innerText;
+navigator.clipboard.writeText(link);
+let tasks=JSON.parse(localStorage.getItem('ct_tasks')||'{}');
+if(!tasks['invite']){bal+=500;tasks['invite']=true;localStorage.setItem('ct_tasks',JSON.stringify(tasks));updateUI();btn.innerText='Done ✓';btn.disabled=true;}
+alert('Invite link copied! +500 CT_BTC!');
+}
+function copyInv(){navigator.clipboard.writeText(document.getElementById('invLink').innerText);alert('Copied!');}
+function dailyTask(btn){
+let last=localStorage.getItem('ct_daily');let today=new Date().toDateString();
+if(last===today){alert('Already claimed today!');return;}
+bal+=50;localStorage.setItem('ct_daily',today);updateUI();btn.innerText='Done ✓';btn.disabled=true;alert('+50 CT_BTC Daily!');
+}
+function boostX2(){rate*=2;updateUI();alert('🚀 x2 active 1h! Rate: '+rate.toFixed(2));setTimeout(()=>{rate/=2;updateUI()},3600000)}
+</script>
+</body>
+</html>
